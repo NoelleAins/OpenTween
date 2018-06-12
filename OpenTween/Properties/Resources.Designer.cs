@@ -1949,6 +1949,18 @@ namespace OpenTween.Properties {
         }
         
         /// <summary>
+        ///   [投稿先: {0}]
+        ///ファイルが大きすぎます。圧縮して再投稿しますか？
+        ///
+        ///ファイル名: {1} に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string PostPictureWarn7 {
+            get {
+                return ResourceManager.GetString("PostPictureWarn7", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   POST完了 に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string PostWorker_RunWorkerCompletedText4 {

@@ -31,6 +31,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using OpenTween.Api.DataModel;
 using OpenTween.Connection;
+using System.Drawing.Imaging;
 
 namespace OpenTween
 {
@@ -512,16 +513,75 @@ namespace OpenTween
 
                     if (!imageService.CheckFileSize(ext, size))
                     {
+                        bool continueUpload = false;
+
                         // ファイルサイズが大きすぎる
-                        if (!noMsgBox)
-                        {
-                            MessageBox.Show(
-                                string.Format(Properties.Resources.PostPictureWarn5, this.ServiceName, MakeAvailableServiceText(ext, size), item.Name),
-                                Properties.Resources.PostPictureWarn4,
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
+                        if (!noMsgBox) {
+                            bool showWarn4 = true;
+                            if (item.IsImage) {
+
+                                DialogResult dialogResult = MessageBox.Show(
+                                    string.Format(Properties.Resources.PostPictureWarn7, this.ServiceName, item.Name),
+                                    Properties.Resources.PostPictureWarn4,
+                                    MessageBoxButtons.YesNo,
+                                    MessageBoxIcon.Exclamation);
+
+                                if (dialogResult == DialogResult.Yes) {
+
+                                    ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
+                                    ImageCodecInfo jpegEncoder = null;
+                                    foreach (var codec in encoders) {
+                                        if(codec.FormatID == ImageFormat.Jpeg.Guid) {
+                                            jpegEncoder = codec;
+                                        }
+                                    }
+
+                                    if(jpegEncoder != null) {
+                                        MemoryImage tmpMemoryImage = null;
+                                        string tmpJpgPath = null;
+                                        try {
+                                            EncoderParameters encoderParams = new EncoderParameters(1);
+                                            tmpMemoryImage = item.CreateImage();
+
+                                            for (int quality = 99; quality > 70; quality--) {
+
+                                                using (encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality)) {
+                                                    tmpJpgPath = Path.GetTempFileName() + ".jpg";
+                                                    tmpMemoryImage.Image.Save(tmpJpgPath, jpegEncoder, encoderParams);
+
+                                                    IMediaItem tmpItem = CreateFileMediaItem(tmpJpgPath, false);
+                                                    if (imageService.CheckFileSize(tmpItem.Extension, tmpItem.Size)) {
+                                                        DisposeMediaItem(item);
+                                                        item = tmpItem;
+                                                        showWarn4 = false;
+                                                        continueUpload = true;
+                                                        break;
+                                                    } else {
+                                                        //System.Diagnostics.Trace.WriteLine($"Quality = {quality}, Size= {tmpItem.Size}");
+                                                        File.Delete(tmpJpgPath);
+                                                        tmpJpgPath = null;
+                                                    }
+                                                }
+                                            }
+                                        } finally {
+                                            tmpMemoryImage?.Dispose();
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (showWarn4) {
+                                MessageBox.Show(
+                                    string.Format(Properties.Resources.PostPictureWarn5, this.ServiceName, MakeAvailableServiceText(ext, size), item.Name),
+                                    Properties.Resources.PostPictureWarn4,
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Warning);
+                            }
                         }
-                        return;
+
+                        if (!continueUpload) {
+                            return;
+                        }
                     }
 
                     if (item.IsImage)

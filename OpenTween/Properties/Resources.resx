@@ -1220,4 +1220,10 @@
     <value>この内容で投稿してもよろしいですか？
 {0}</value>
   </data>
+  <data name="PostPictureWarn7" xml:space="preserve">
+    <value>[投稿先: {0}]
+ファイルが大きすぎます。圧縮して再投稿しますか？
+
+ファイル名: {1}</value>
+  </data>
 </root>
